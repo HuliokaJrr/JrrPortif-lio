@@ -28,7 +28,7 @@
             font-size: 0.85rem;
             text-align: left;
             padding: 16px 20px;
-            background: var(--surface-color);
+            background: rgba(25, 23, 102, 0.6);
             border: 1px solid var(--line-color);
             color: var(--text-muted);
             cursor: pointer;
@@ -40,16 +40,16 @@
             border-color: var(--accent-violet);
             color: #FFF;
             background: var(--surface-hover);
-            box-shadow: 0 0 15px rgba(139, 40, 202, 0.2);
+            box-shadow: 0 0 15px rgba(139, 40, 202, 0.3);
         }
 
         .terminal-box {
             width: 100%;
-            background: #000;
+            background: rgba(0, 0, 0, 0.85);
             border: 1px solid var(--accent-violet);
             border-radius: 6px;
             overflow: hidden;
-            box-shadow: 0 0 30px rgba(139, 40, 202, 0.2);
+            box-shadow: 0 0 30px rgba(139, 40, 202, 0.25);
         }
 
         .terminal-header {
@@ -68,7 +68,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
-            background: #07060c;
+            background: rgba(7, 6, 12, 0.9);
         }
 
         #gameCanvas {
@@ -78,7 +78,7 @@
 
         .terminal-controls {
             padding: 20px;
-            background: #0b0b14;
+            background: rgba(11, 11, 20, 0.95);
             border-top: 1px solid var(--line-color);
             display: flex;
             justify-content: space-between;
@@ -134,11 +134,10 @@
                 ARCADE <span class="purple-accent">HUB</span>
             </h1>
             <p class="bio-text">
-                Escolha o jogo no menu lateral e teste as engines interativas desenvolvidas em JavaScript puro.
+                Escolha o minigame no menu lateral e teste as engines interativas desenvolvidas em JavaScript puro.
             </p>
 
             <div class="arcade-layout">
-                <!-- MENU INTERATIVO DE JOGOS -->
                 <div class="game-selector">
                     <button class="game-btn active" onclick="switchGame('invaders', this)">01. SPACE INVADERS</button>
                     <button class="game-btn" onclick="switchGame('flappy', this)">02. FLAPPY BIRD</button>
@@ -146,7 +145,6 @@
                     <button class="game-btn" onclick="switchGame('snake', this)">04. SNAKE MODERN</button>
                 </div>
 
-                <!-- TERMINAL ONDE O JOGO RODA -->
                 <div class="terminal-box">
                     <div class="terminal-header">
                         <div id="gameTitle" style="color: var(--accent-cyan);">MODO: SPACE_INVADERS</div>
@@ -169,15 +167,19 @@
     </main>
 
     <script>
-        // --- CHUVA DIGITAL DE FUNDO ---
         const bgCanvas = document.getElementById('bgCanvas');
         const bgCtx = bgCanvas.getContext('2d');
-        bgCanvas.width = window.innerWidth;
-        bgCanvas.height = window.innerHeight;
+        function resizeBg() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+        }
+        resizeBg();
+        window.addEventListener('resize', resizeBg);
+
         const chars = '0189ABCDEF';
         const drops = Array(Math.floor(bgCanvas.width / 14)).fill(1);
         setInterval(() => {
-            bgCtx.fillStyle = 'rgba(11, 11, 20, 0.15)';
+            bgCtx.fillStyle = 'rgba(11, 11, 20, 0.2)';
             bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
             bgCtx.fillStyle = '#480666';
             bgCtx.font = '14px "Space Mono"';
@@ -188,7 +190,6 @@
             });
         }, 40);
 
-        // --- SISTEMA DE ENGINE DE JOGOS ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('score');
@@ -259,7 +260,6 @@
             ctx.fillText(msg, canvas.width / 2, canvas.height / 2);
         }
 
-        // --- 1. SPACE INVADERS ---
         let playerX, bullets, aliens;
         function setupInvaders() {
             playerX = 180; bullets = []; aliens = [];
@@ -293,7 +293,6 @@
             if (aliens.every(a => !a.alive)) gameOver("MISSÃO CUMPRIDA!");
         }
 
-        // --- 2. FLAPPY BIRD ---
         let birdY, birdV, pipes;
         function setupFlappy() {
             birdY = 200; birdV = 0; pipes = [{ x: 400, top: 120, bottom: 120 }];
@@ -319,7 +318,6 @@
             });
         }
 
-        // --- 3. RETRO PONG ---
         let bx, by, bsx, bsy, py, aipy;
         function setupPong() {
             bx = 200; by = 200; bsx = 4; bsy = 3; py = 160; aipy = 160;
@@ -339,7 +337,6 @@
             ctx.fillRect(bx, by, 8, 8);
         }
 
-        // --- 4. SNAKE MODERN ---
         let snake, food, dx, dy, grid = 20;
         function setupSnake() {
             snake = [{ x: 200, y: 200 }]; food = { x: 100, y: 100 }; dx = grid; dy = 0;
@@ -362,7 +359,6 @@
             });
         }
 
-        // CONTROLES DE TECLADO
         document.addEventListener('keydown', e => {
             if (!active) return;
             if (currentGame === 'invaders') {

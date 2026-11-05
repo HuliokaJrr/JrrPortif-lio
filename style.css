@@ -6,13 +6,12 @@
 }
 
 :root {
-    /* Paleta extraída do print (Harmonia Análoga) */
-    --bg-color: #0b0b14;            /* Fundo escuro noturno */
-    --surface-color: #191766;       /* Azul marinho profundo */
-    --surface-hover: #273966;       /* Azul médio petróleo */
-    --accent-purple: #480666;      /* Roxo vibrante */
-    --accent-violet: #8b28ca;      /* Violeta neon para destaques */
-    --accent-cyan: #38bdf8;        /* Ciano para contraste limpo */
+    --bg-color: #0b0b14;
+    --surface-color: #191766;
+    --surface-hover: #273966;
+    --accent-purple: #480666;
+    --accent-violet: #8b28ca;
+    --accent-cyan: #38bdf8;
     --text-color: #e2e8f0;
     --text-muted: #8e9bb0;
     --line-color: #273966;
@@ -31,17 +30,17 @@ html {
 body {
     overflow-x: hidden;
     position: relative;
+    min-height: 100vh;
 }
 
-/* CANVAS DE DADOS NO FUNDO */
+/* CANVAS DE FUNDO FIXO */
 #bgCanvas {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1;
-    opacity: 0.18;
+    z-index: -999;
     pointer-events: none;
 }
 
@@ -51,7 +50,7 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 25px 5vw;
-    background: rgba(11, 11, 20, 0.85);
+    background: rgba(11, 11, 20, 0.9);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line-color);
     position: sticky;
@@ -85,6 +84,8 @@ main {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 5vw;
+    position: relative;
+    z-index: 2;
 }
 
 /* HERO EDITORIAL */
@@ -148,7 +149,7 @@ main {
     margin-top: 20px;
 }
 
-/* ESTRUTURA EDITORIAL / SEÇÕES */
+/* SEÇÕES EDITORIAIS */
 .editorial-section {
     display: grid;
     grid-template-columns: 180px 1fr;
@@ -243,7 +244,7 @@ main {
     text-decoration: none;
     padding: 10px 18px;
     border: 1px solid var(--line-color);
-    background: var(--bg-color);
+    background: rgba(11, 11, 20, 0.8);
     transition: all 0.3s;
 }
 

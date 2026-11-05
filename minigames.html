@@ -3,23 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minigame Hub | Ivan Lopes</title>
+    <title>Arcade Hub | Ivan Lopes</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .arcade-wrapper {
+        .arcade-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 30px;
             margin-top: 40px;
+            align-items: start;
+        }
+
+        .game-selector {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            width: 100%;
+            gap: 10px;
+        }
+
+        .game-btn {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            text-align: left;
+            padding: 15px 20px;
+            background: #0A0A0C;
+            border: 1px solid var(--line-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .game-btn:hover, .game-btn.active {
+            border-color: var(--accent-red);
+            color: var(--text-color);
+            background: rgba(168, 18, 18, 0.05);
         }
 
         .terminal-box {
             width: 100%;
-            max-width: 600px;
             background: #000000;
             border: 1px solid var(--accent-red);
             border-radius: 4px;
@@ -28,7 +51,6 @@
             box-shadow: 0 0 30px rgba(168, 18, 18, 0.15);
         }
 
-        /* Efeito Scanline CRT */
         .terminal-box::before {
             content: " ";
             display: block;
@@ -107,12 +129,10 @@
             box-shadow: 0 0 15px rgba(168, 18, 18, 0.4);
         }
 
-        .instructions {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 20px;
-            text-align: center;
+        @media (max-width: 900px) {
+            .arcade-layout {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -130,17 +150,26 @@
     <main>
         <section class="hero-editorial">
             <h1 class="hero-title">
-                MINIGAME <span class="red-accent">HUB</span>
+                ARCADE <span class="red-accent">HUB</span>
             </h1>
             <p class="bio-text">
-                /01 — MÓDULO RETRÔ: ENGINE DE SINTERIZAÇÃO EM CANVAS E MANIPULAÇÃO DE ESTADOS EM JS.
+                /01 — SELECIONA UM MÓDULO ABAIXO PARA EXECUTAR A ENGINE EM JAVASCRIPT PURO.
             </p>
 
-            <div class="arcade-wrapper">
+            <div class="arcade-layout">
+                <!-- Seletor de Jogos -->
+                <div class="game-selector">
+                    <button class="game-btn active" onclick="switchGame('snake')">01. SNAKE [COBRINHA]</button>
+                    <button class="game-btn" onclick="switchGame('invaders')">02. SPACE INVADERS</button>
+                    <button class="game-btn" onclick="switchGame('pong')">03. RETRO PONG</button>
+                    <button class="game-btn" onclick="switchGame('flappy')">04. FLAPPY DOT</button>
+                </div>
+
+                <!-- Terminal do Jogo -->
                 <div class="terminal-box">
                     <div class="terminal-header">
-                        <div>SYS_STATUS: <span>ONLINE</span></div>
-                        <div>PROTÓTIPO_01</div>
+                        <div id="gameTitle">MODO: SNAKE_ENGINE</div>
+                        <div>STATUS: <span id="sysStatus">STANDBY</span></div>
                     </div>
 
                     <div class="canvas-container">
@@ -149,13 +178,11 @@
 
                     <div class="terminal-controls">
                         <div class="score-display">
-                            PONTOS: <span id="score">00</span> | RECORD: <span id="highScore">00</span>
+                            PONTOS: <span id="score">00</span>
                         </div>
-                        <button id="startBtn" class="btn-arcade">> INICIAR SEQUÊNCIA</button>
+                        <button id="startBtn" class="btn-arcade">> INICIAR JOGO</button>
                     </div>
                 </div>
-
-                <p class="instructions">[ USE AS SETAS DO TECLADO PARA NAVEGAR ]</p>
             </div>
         </section>
     </main>
@@ -164,14 +191,215 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('score');
-        const highScoreEl = document.getElementById('highScore');
         const startBtn = document.getElementById('startBtn');
+        const sysStatus = document.getElementById('sysStatus');
+        const gameTitle = document.getElementById('gameTitle');
+        const gameBtns = document.querySelectorAll('.game-btn');
 
-        const grid = 20;
-        const count = canvas.width / grid;
-
-        let snake = [{ x: 10, y: 10 }];
-        let food = { x: 15, y: 15 };
-        let dx = grid;
-        let dy = 0;
+        let currentGame = 'snake';
+        let gameInterval = null;
         let score = 0;
+        let active = false;
+
+        // Variáveis globais dos estados dos jogos
+        let snake, food, dx, dy, grid;
+        let invaders, bullets, alienBullets, playerX;
+        let ballX, ballY, ballSpeedX, ballSpeedY, paddleY, aiPaddleY;
+        let birdY, birdVelocity, pipes;
+
+        function switchGame(game) {
+            stopGame();
+            currentGame = game;
+            gameBtns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if(game === 'snake') gameTitle.textContent = "MODO: SNAKE_ENGINE";
+            if(game === 'invaders') gameTitle.textContent = "MODO: SPACE_INVADERS";
+            if(game === 'pong') gameTitle.textContent = "MODO: RETRO_PONG";
+            if(game === 'flappy') gameTitle.textContent = "MODO: FLAPPY_DOT";
+            
+            resetCurrentGame();
+        }
+
+        function resetCurrentGame() {
+            active = false;
+            sysStatus.textContent = "STANDBY";
+            score = 0;
+            scoreEl.textContent = "00";
+            ctx.fillStyle = '#020203';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#666';
+            ctx.font = '14px "Space Mono"';
+            ctx.textAlign = 'center';
+            ctx.fillText("CLIQUE EM INICIAR JOGO", canvas.width / 2, canvas.height / 2);
+        }
+
+        function stopGame() {
+            if (gameInterval) clearInterval(gameInterval);
+            active = false;
+        }
+
+        function startGame() {
+            stopGame();
+            active = true;
+            sysStatus.textContent = "ONLINE";
+            score = 0;
+            scoreEl.textContent = "00";
+
+            if (currentGame === 'snake') initSnake();
+            if (currentGame === 'invaders') initInvaders();
+            if (currentGame === 'pong') initPong();
+            if (currentGame === 'flappy') initFlappy();
+        }
+
+        // --- 01. SNAKE ---
+        function initSnake() {
+            grid = 20;
+            snake = [{ x: 10 * grid, y: 10 * grid }];
+            food = { x: 5 * grid, y: 5 * grid };
+            dx = grid; dy = 0;
+            gameInterval = setInterval(updateSnake, 100);
+        }
+        function updateSnake() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || snake.some(p => p.x === head.x && p.y === head.y)) {
+                return gameOver();
+            }
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                score += 10; scoreEl.textContent = score;
+                food = { x: Math.floor(Math.random()*(canvas.width/grid))*grid, y: Math.floor(Math.random()*(canvas.height/grid))*grid };
+            } else { snake.pop(); }
+
+            ctx.fillStyle = '#020203'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#A81212'; ctx.fillRect(food.x, food.y, grid-2, grid-2);
+            snake.forEach((p, i) => {
+                ctx.fillStyle = i === 0 ? '#E61C1C' : '#660B0B';
+                ctx.fillRect(p.x, p.y, grid-2, grid-2);
+            });
+        }
+
+        // --- 02. SPACE INVADERS ---
+        function initInvaders() {
+            playerX = 180;
+            bullets = [];
+            alienBullets = [];
+            invaders = [];
+            for(let r=0; r<3; r++) {
+                for(let c=0; c<6; c++) {
+                    invaders.push({x: c * 50 + 50, y: r * 30 + 40, alive: true});
+                }
+            }
+            gameInterval = setInterval(updateInvaders, 30);
+        }
+        function updateInvaders() {
+            ctx.fillStyle = '#020203'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Player
+            ctx.fillStyle = '#E61C1C'; ctx.fillRect(playerX, 360, 40, 10);
+            // Bullets
+            ctx.fillStyle = '#FFF';
+            bullets.forEach((b, index) => {
+                b.y -= 7; ctx.fillRect(b.x, b.y, 3, 10);
+                if(b.y < 0) bullets.splice(index, 1);
+            });
+            // Invaders
+            invaders.forEach(inv => {
+                if(!inv.alive) return;
+                ctx.fillStyle = '#10B981'; ctx.fillRect(inv.x, inv.y, 25, 15);
+                // Colisão tiro
+                bullets.forEach((b, bIdx) => {
+                    if(b.x > inv.x && b.x < inv.x+25 && b.y > inv.y && b.y < inv.y+15) {
+                        inv.alive = false; bullets.splice(bIdx, 1);
+                        score += 20; scoreEl.textContent = score;
+                    }
+                });
+            });
+            if(invaders.every(i => !i.alive)) { gameOver("VITÓRIA!"); }
+        }
+
+        // --- 03. RETRO PONG ---
+        function initPong() {
+            ballX = 200; ballY = 200; ballSpeedX = 4; ballSpeedY = 3;
+            paddleY = 160; aiPaddleY = 160;
+            gameInterval = setInterval(updatePong, 30);
+        }
+        function updatePong() {
+            ballX += ballSpeedX; ballY += ballSpeedY;
+            if(ballY < 0 || ballY > canvas.height) ballSpeedY *= -1;
+            // IA simples
+            if(aiPaddleY + 35 < ballY) aiPaddleY += 3; else aiPaddleY -= 3;
+            // Colisão Pales
+            if(ballX < 25 && ballY > paddleY && ballY < paddleY + 70) { ballSpeedX *= -1; score += 5; scoreEl.textContent = score; }
+            if(ballX > canvas.width - 25 && ballY > aiPaddleY && ballY < aiPaddleY + 70) { ballSpeedX *= -1; }
+            if(ballX < 0 || ballX > canvas.width) { return gameOver(); }
+
+            ctx.fillStyle = '#020203'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#FFF'; ctx.fillRect(15, paddleY, 10, 70);
+            ctx.fillRect(canvas.width - 25, aiPaddleY, 10, 70);
+            ctx.fillRect(ballX, ballY, 8, 8);
+        }
+
+        // --- 04. FLAPPY DOT ---
+        function initFlappy() {
+            birdY = 200; birdVelocity = 0;
+            pipes = [{x: 400, top: 120, bottom: 120}];
+            gameInterval = setInterval(updateFlappy, 30);
+        }
+        function updateFlappy() {
+            birdVelocity += 0.6; birdY += birdVelocity;
+            if(birdY > canvas.height || birdY < 0) return gameOver();
+
+            ctx.fillStyle = '#020203'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Pássaro/Ponto
+            ctx.fillStyle = '#E61C1C'; ctx.fillRect(80, birdY, 15, 15);
+            // Canos
+            ctx.fillStyle = '#10B981';
+            pipes.forEach(p => {
+                p.x -= 3;
+                ctx.fillRect(p.x, 0, 40, p.top);
+                ctx.fillRect(p.x, canvas.height - p.bottom, 40, p.bottom);
+                if(p.x < -40) { p.x = 400; p.top = Math.random()*150+50; p.bottom = Math.random()*150+50; score += 10; scoreEl.textContent = score; }
+                if(80 + 15 > p.x && 80 < p.x + 40 && (birdY < p.top || birdY + 15 > canvas.height - p.bottom)) return gameOver();
+            });
+        }
+
+        function gameOver(msg = "GAME OVER") {
+            stopGame();
+            sysStatus.textContent = "OFFLINE";
+            ctx.fillStyle = 'rgba(6, 6, 7, 0.9)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#A81212';
+            ctx.font = 'bold 16px "Space Mono"';
+            ctx.textAlign = 'center';
+            ctx.fillText(msg, canvas.width / 2, canvas.height / 2);
+        }
+
+        // Controles de Teclado Universais
+        document.addEventListener('keydown', e => {
+            if(!active) return;
+            if(currentGame === 'snake') {
+                if(e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -grid; }
+                if(e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = grid; }
+                if(e.key === 'ArrowLeft' && dx === 0) { dx = -grid; dy = 0; }
+                if(e.key === 'ArrowRight' && dx === 0) { dx = grid; dy = 0; }
+            }
+            if(currentGame === 'invaders') {
+                if(e.key === 'ArrowLeft' && playerX > 10) playerX -= 20;
+                if(e.key === 'ArrowRight' && playerX < canvas.width - 50) playerX += 20;
+                if(e.key === ' ' || e.key === 'ArrowUp') bullets.push({x: playerX + 18, y: 360});
+            }
+            if(currentGame === 'pong') {
+                if(e.key === 'ArrowUp' && paddleY > 10) paddleY -= 25;
+                if(e.key === 'ArrowDown' && paddleY < canvas.height - 80) paddleY += 25;
+            }
+            if(currentGame === 'flappy') {
+                if(e.key === ' ' || e.key === 'ArrowUp') birdVelocity = -8;
+            }
+        });
+
+        startBtn.addEventListener('click', startGame);
+        resetCurrentGame();
+    </script>
+</body>
+</html>
